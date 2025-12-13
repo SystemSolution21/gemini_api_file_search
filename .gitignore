@@ -12,8 +12,25 @@ wheels/
 # Environment variables
 .env
 
-# Upload files
-upload/*.*
+# Upload files gemini file search support
+upload/*.pdf 
+upload/*.doc 
+upload/*.docx 
+upload/*.ppt 
+upload/*.pptx 
+upload/*.xls 
+upload/*.xlsx 
+upload/*.csv 
+upload/*.txt 
+upload/*.md 
+upload/*.html 
+upload/*.py 
+upload/*.js 
+upload/*.java 
+upload/*.cpp 
+upload/*.json 
+upload/*.xml 
+upload/*.rtf
 
 # Log file
 logs/*.log
