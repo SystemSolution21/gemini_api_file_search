@@ -57,7 +57,9 @@ class GeminiFileSearch:
         if not self.upload_name:
             self.upload_name = f"upload-{uuid.uuid4().hex[:8]}"
 
-        logger.info(f"Selected file: {self.file_path} (ID: {self.upload_name})")
+        logger.info(
+            f"Selected file: {self.file_path} (Upload Name: {self.upload_name})"
+        )
         return True
 
     def _ensure_file_path(self) -> bool:
