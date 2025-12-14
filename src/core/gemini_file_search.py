@@ -53,6 +53,7 @@ class GeminiFileSearch:
         raw_name = self.file_path.name.lower().rsplit(".", 1)[0]
         self.upload_name = re.sub(r"[^a-z0-9]+", "-", raw_name).strip("-")
 
+        # fallback to random ID if no valid name
         if not self.upload_name:
             self.upload_name = f"upload-{uuid.uuid4().hex[:8]}"
 
