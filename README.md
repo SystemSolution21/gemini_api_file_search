@@ -26,24 +26,34 @@ Working with the Gemini API File Search involves specific constraints:
 
 ## Setup
 
-1. **Environment Variables**: Ensure you have a `.env` file with:
+1. **Environment Variables**: Change the `.env.example` file to `.env` and fill in the values:
 
     ```env
     GOOGLE_API_KEY=your_api_key_here
-    GEMINI_MODEL=gemini-2.5-flash  # or your preferred model
+
+    # Gemini model configurations
+    GEMINI_MODEL=gemini-2.5-flash or your preferred model
+    GEMINI_TEMPERATURE=1
+    GEMINI_TOP_P=0.95
+    GEMINI_TOP_K=64
+    GEMINI_MAX_OUTPUT_TOKENS=8192
+
+    # File Upload
+    MAX_FILE_SIZE_MB=20
+    UPLOAD_TIMEOUT=180
     ```
 
-2. **Dependencies**: Install required packages:
+2. **Dependencies**: Install required packages using uv:
 
-    ```bash
-    pip install -r requirements.txt
+    ```pwsh
+    uv sync
     ```
 
 ## Usage
 
 Run the application wrapper:
 
-```bash
+```pwsh
 python app.py
 ```
 
