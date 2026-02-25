@@ -6,7 +6,6 @@ Provides centralized logging configuration for the application.
 
 # Import built-in modules
 import logging
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -47,7 +46,7 @@ def setup_logger(
 
     # Create formatter
     formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        "%(asctime)s - %(name)s - %(module)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
@@ -81,5 +80,4 @@ def get_app_logger() -> logging.Logger:
     logging.Logger
         The main application logger with file and console output.
     """
-    today: str = datetime.now().strftime(format="%Y-%m-%d")
-    return setup_logger(name="gemini_file_search", log_file=f"app_{today}.log")
+    return setup_logger(name="gemini_file_search", log_file="app.log")
