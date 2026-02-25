@@ -6,6 +6,7 @@ using the Gemini API."""
 
 # Import built-in modules
 import asyncio
+import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog
@@ -13,11 +14,11 @@ from typing import Optional
 
 # Import custom modules
 from src.config import config
-from src.core.gemini_file_search import GeminiFileSearch
+from src.core.search import GeminiFileSearch
 from src.utils.logger import get_app_logger
 
 # Configure logging
-logger = get_app_logger()
+logger: logging.Logger = get_app_logger()
 
 # Validate configuration
 config.validate_or_exit()
@@ -33,7 +34,7 @@ def select_file() -> Optional[Path]:
 
     # Define supported file types for Gemini File Search
     # Based on Gemini API documentation
-    filetypes = [
+    filetypes: list[tuple[str, str]] = [
         (
             "Supported Files",
             "*.pdf *.doc *.docx *.ppt *.pptx *.xls *.xlsx *.csv *.txt *.md *.html *.py *.js *.java *.cpp *.json *.xml *.rtf",
@@ -41,13 +42,13 @@ def select_file() -> Optional[Path]:
         ("All Files", "*.*"),
     ]
 
-    logger.info("Opening file upload window...")
+    logger.info(msg="Opening file upload window...")
 
     initial_dir = config.BASE_DIR / "upload"
     if not initial_dir.exists():
-        initial_dir = config.BASE_DIR
+        initial_dir: Path = config.BASE_DIR
 
-    file_path_str = filedialog.askopenfilename(
+    file_path_str: str = filedialog.askopenfilename(
         title="Select a file for Gemini File Search",
         filetypes=filetypes,
         initialdir=initial_dir,
@@ -57,24 +58,24 @@ def select_file() -> Optional[Path]:
     root.destroy()
 
     if not file_path_str:
-        logger.warning("No file selected.")
+        logger.warning(msg="No file selected.")
         return None
 
     return Path(file_path_str)
 
 
-async def main():
+async def main() -> None:
     """Main function to run the Gemini File Search tool."""
 
     # Select file
-    file_path = select_file()
+    file_path: Path | None = select_file()
     if not file_path:
         return
 
     # Gemini API FileSearch Tool
     gemini_search = GeminiFileSearch()
-    await gemini_search.run(str(file_path))
+    await gemini_search.run(file_path=str(object=file_path))
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main=main())

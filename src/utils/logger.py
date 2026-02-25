@@ -80,4 +80,4 @@ def get_app_logger() -> logging.Logger:
     logging.Logger
         The main application logger with file and console output.
     """
-    return setup_logger(name="gemini_file_search", log_file="app.log")
+    return setup_logger(name="gemini_api_file_search", log_file="app.log")

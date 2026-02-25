@@ -17,7 +17,7 @@ upload/*
 !upload/.gitkeep
 
 # Log file
-logs/*.log
+#logs/*.log
 
 # Summary files
-summary/*.md
+#summary/*.md
