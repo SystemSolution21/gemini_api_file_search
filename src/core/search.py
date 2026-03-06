@@ -4,7 +4,9 @@
 
 # Import built-in modules
 import asyncio
+import hashlib
 import re
+import shutil
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -34,7 +36,10 @@ class GeminiFileSearch:
 
         # Placeholders for file info
         self.file_path: Optional[Path] = None
-        self.upload_name: Optional[str] = None
+        self.display_name: Optional[str] = (
+            None  # original filename stem (may contain non-ASCII)
+        )
+        self.upload_name: Optional[str] = None  # ASCII-safe name for API resource names
 
     def set_file_path(self, file_path: str) -> bool:
         """Sets the file path and prepares upload name."""
@@ -47,15 +52,19 @@ class GeminiFileSearch:
         if not self._ensure_file_path():
             return False
 
-        # Determine internal name (lowercase, sanitized) - used for generic ID generation
-        # We strip non-alphanumeric characters to ensure compliance with resource name requirements
-        # Resource names typically follow: files/[a-z0-9-]+
-        raw_name = self.file_path.name.lower().rsplit(".", 1)[0]
+        # Preserve original filename stem for display/summary purposes
+        self.display_name = self.file_path.stem
+
+        # Determine ASCII-safe name for API resource names (files/[a-z0-9-]+)
+        raw_name = self.file_path.stem.lower()
         self.upload_name = re.sub(r"[^a-z0-9]+", "-", raw_name).strip("-")
 
-        # fallback to random ID if no valid name
+        # If no valid ASCII chars remain (e.g. pure non-ASCII filename),
+        # use a stable hash of the original filename so the same file always
+        # maps to the same resource name, enabling cleanup on re-upload.
         if not self.upload_name:
-            self.upload_name = f"upload-{uuid.uuid4().hex[:8]}"
+            stable_id = hashlib.md5(self.file_path.name.encode("utf-8")).hexdigest()[:8]
+            self.upload_name = f"upload-{stable_id}"
 
         logger.info(
             f"Selected file: {self.file_path} (Upload Name: {self.upload_name})"
@@ -89,11 +98,23 @@ class GeminiFileSearch:
         # Upload
         logger.info(f"Uploading {self.file_path.name}...")
         try:
-            upload_file = self.client.files.upload(
-                file=self.file_path, config={"name": self.upload_name}
+            # Create ASCII-safe temporary filename to handle non-ASCII filenames
+            temp_path = (
+                self.file_path.parent
+                / f"upload_{uuid.uuid4().hex}{self.file_path.suffix}"
             )
-            logger.info(f"Uploaded: {upload_file.name}")
-            return upload_file.name
+            shutil.copy2(self.file_path, temp_path)
+
+            try:
+                upload_file = self.client.files.upload(
+                    file=temp_path, config={"name": self.upload_name}
+                )
+                logger.info(f"Uploaded: {upload_file.name}")
+                return upload_file.name
+            finally:
+                if temp_path.exists():
+                    temp_path.unlink()
+
         except Exception as e:
             logger.error(f"Upload failed: {e}")
             return None
@@ -172,11 +193,19 @@ class GeminiFileSearch:
         # 5. Generate Content
         logger.info("Generating content...")
         prompt = """You are a helpful assistant. You have access to the provided files.
-Summarize the file based on the information in these files.
-Keep the summary concise and to the point.
-When citing sources, use the format (p. X) for page references, where X is the page number.
-Format your responses in a clear, readable style that works well with markdown rendering.
-Finally make key takeaways Q&A from the file.
+
+**Language rule**: Detect the primary language of the document and respond entirely in that language. Do not translate content.
+
+**Task 1 – Summary**
+Summarize the file concisely and clearly, covering the main topics and key findings.
+
+**Task 2 – Citations**
+Whenever you reference a specific fact or section, cite it inline using the file_search tool's built-in source references so the citation becomes a clickable link. Do not manually write page numbers like "(p. X)"; rely solely on the grounded citations returned by the file search tool.
+
+**Task 3 – Key Takeaways Q&A**
+End with a Q&A section of the most important takeaways from the document, in the same language as the document.
+
+Format the entire response in clean Markdown (headings, bullet points, bold) for readability.
 """
 
         try:
@@ -209,7 +238,7 @@ Finally make key takeaways Q&A from the file.
         summary_dir = config.SUMMARY_DIR
         summary_dir.mkdir(exist_ok=True)
 
-        filename = f"{self.upload_name}_summary.md"
+        filename = f"{self.display_name}_summary.md"
         file_path = summary_dir / filename
 
         try:
