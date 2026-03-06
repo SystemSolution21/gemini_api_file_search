@@ -107,7 +107,11 @@ class GeminiFileSearch:
 
             try:
                 upload_file = self.client.files.upload(
-                    file=temp_path, config={"name": self.upload_name}
+                    file=temp_path,
+                    config={
+                        "name": self.upload_name,
+                        "display_name": self.display_name,
+                    },
                 )
                 logger.info(f"Uploaded: {upload_file.name}")
                 return upload_file.name
@@ -198,11 +202,9 @@ class GeminiFileSearch:
 
 **Task 1 – Summary**
 Summarize the file concisely and clearly, covering the main topics and key findings.
+When referencing a specific fact or section, cite the page inline using the format (p. X), where X is the page number.
 
-**Task 2 – Citations**
-Whenever you reference a specific fact or section, cite it inline using the file_search tool's built-in source references so the citation becomes a clickable link. Do not manually write page numbers like "(p. X)"; rely solely on the grounded citations returned by the file search tool.
-
-**Task 3 – Key Takeaways Q&A**
+**Task 2 – Key Takeaways Q&A**
 End with a Q&A section of the most important takeaways from the document, in the same language as the document.
 
 Format the entire response in clean Markdown (headings, bullet points, bold) for readability.
@@ -226,13 +228,13 @@ Format the entire response in clean Markdown (headings, bullet points, bold) for
 
             # Save summary
             if response.text:
-                self.save_summary(response.text)
+                self.save_summary(response)
         except Exception as e:
             logger.error(f"Generation failed: {e}")
 
-    def save_summary(self, content: str):
+    def save_summary(self, response) -> None:
         """Saves the generated summary to a markdown file."""
-        if not self.upload_name:
+        if not self.display_name:
             return
 
         summary_dir = config.SUMMARY_DIR
@@ -243,7 +245,7 @@ Format the entire response in clean Markdown (headings, bullet points, bold) for
 
         try:
             with open(file_path, "w", encoding="utf-8") as f:
-                f.write(content)
+                f.write(response.text)
             logger.info(f"Summary saved to: {file_path}")
         except Exception as e:
             logger.error(f"Failed to save summary: {e}")
